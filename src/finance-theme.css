@@ -1,0 +1,76 @@
+/* Finance tracker custom theme overrides - loaded last to ensure priority */
+
+/* Force override root theme variables */
+:root,
+html,
+#root,
+#spark-app {
+  /* Finance tracker theme colors with highest specificity */
+  --background: oklch(1 0 0) !important;
+  --foreground: oklch(0.2 0 0) !important;
+  
+  --card: oklch(0.98 0 0) !important;
+  --card-foreground: oklch(0.2 0 0) !important;
+  
+  --popover: oklch(1 0 0) !important;
+  --popover-foreground: oklch(0.2 0 0) !important;
+  
+  --primary: oklch(0.45 0.15 200) !important;
+  --primary-foreground: oklch(1 0 0) !important;
+  
+  --secondary: oklch(0.85 0.05 220) !important;
+  --secondary-foreground: oklch(0.2 0 0) !important;
+  
+  --muted: oklch(0.95 0.02 220) !important;
+  --muted-foreground: oklch(0.5 0 0) !important;
+  
+  --accent: oklch(0.65 0.18 45) !important;
+  --accent-foreground: oklch(1 0 0) !important;
+  
+  --destructive: oklch(0.577 0.245 27.325) !important;
+  --destructive-foreground: oklch(1 0 0) !important;
+  
+  --border: oklch(0.9 0.02 220) !important;
+  --input: oklch(0.9 0.02 220) !important;
+  --ring: oklch(0.45 0.15 200) !important;
+  
+  /* Map theme colors for Tailwind */
+  --color-background: var(--background) !important;
+  --color-foreground: var(--foreground) !important;
+  --color-card: var(--card) !important;
+  --color-card-foreground: var(--card-foreground) !important;
+  --color-popover: var(--popover) !important;
+  --color-popover-foreground: var(--popover-foreground) !important;
+  --color-primary: var(--primary) !important;
+  --color-primary-foreground: var(--primary-foreground) !important;
+  --color-secondary: var(--secondary) !important;
+  --color-secondary-foreground: var(--secondary-foreground) !important;
+  --color-muted: var(--muted) !important;
+  --color-muted-foreground: var(--muted-foreground) !important;
+  --color-accent: var(--accent) !important;
+  --color-accent-foreground: var(--accent-foreground) !important;
+  --color-destructive: var(--destructive) !important;
+  --color-destructive-foreground: var(--destructive-foreground) !important;
+  --color-border: var(--border) !important;
+  --color-input: var(--input) !important;
+  --color-ring: var(--ring) !important;
+  
+  /* Additional finance tracker colors */
+  --color-success: oklch(0.55 0.15 140) !important;
+  --color-success-foreground: oklch(1 0 0) !important;
+  --color-warning: oklch(0.75 0.15 60) !important;
+  --color-warning-foreground: oklch(0.2 0 0) !important;
+}
+
+/* Force override body styles */
+html,
+body {
+  font-family: 'Inter', sans-serif !important;
+  background: oklch(1 0 0) !important;
+  color: oklch(0.2 0 0) !important;
+}
+
+/* Custom utility classes */
+.font-tabular {
+  font-variant-numeric: tabular-nums !important;
+}
