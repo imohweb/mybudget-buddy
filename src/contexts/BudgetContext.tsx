@@ -3,6 +3,7 @@ import { toast } from 'sonner';
 import { Expense, Budget, calculateBudgetData, getCategoryInfo, formatCurrency } from '../lib/types';
 import EmailService from '../lib/emailService';
 import { useLocalStorage } from '../hooks/useLocalStorage';
+import { useAuth } from './AuthContext';
 
 interface BudgetContextType {
   expenses: Expense[];
@@ -31,9 +32,13 @@ interface BudgetProviderProps {
 }
 
 export const BudgetProvider: React.FC<BudgetProviderProps> = ({ children }) => {
-  const [expenses, setExpenses] = useLocalStorage<Expense[]>('expenses', []);
-  const [budgets, setBudgets] = useLocalStorage<Budget[]>('budgets', []);
-  const [notifiedBudgets, setNotifiedBudgets] = useLocalStorage<string[]>('notified-budgets', []);
+  const { user, isAuthenticated } = useAuth();
+  
+  // Use user-specific keys for data storage
+  const userKey = user ? user.id : 'guest';
+  const [expenses, setExpenses] = useLocalStorage<Expense[]>(`expenses-${userKey}`, []);
+  const [budgets, setBudgets] = useLocalStorage<Budget[]>(`budgets-${userKey}`, []);
+  const [notifiedBudgets, setNotifiedBudgets] = useLocalStorage<string[]>(`notified-budgets-${userKey}`, []);
   const [emailService] = useState(() => EmailService.getInstance());
 
   const addExpense = (expenseData: Omit<Expense, 'id' | 'createdAt'>) => {
