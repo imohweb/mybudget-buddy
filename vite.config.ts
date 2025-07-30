@@ -16,5 +16,5 @@ export default defineConfig({
       '@': resolve(projectRoot, 'src')
     }
   },
-  base: process.env.NODE_ENV === 'production' ? '/budget-buddy-app/' : '/',
+  base: process.env.NODE_ENV === 'production' ? '/mybudget-buddy/' : '/',
 });
