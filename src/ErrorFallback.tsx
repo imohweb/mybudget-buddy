@@ -17,9 +17,9 @@ export const ErrorFallback = ({ error, resetErrorBoundary }: ErrorFallbackProps)
       <div className="w-full max-w-md">
         <Alert variant="destructive" className="mb-6">
           <Warning className="h-4 w-4" />
-          <AlertTitle>This spark has encountered a runtime error</AlertTitle>
+          <AlertTitle>Application Error</AlertTitle>
           <AlertDescription>
-            Something unexpected happened while running the application. The error details are shown below. Contact the spark author and let them know about this issue.
+            Something unexpected happened while running the application. The error details are shown below.
           </AlertDescription>
         </Alert>
         

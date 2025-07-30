@@ -3,8 +3,7 @@
 /* Force override root theme variables */
 :root,
 html,
-#root,
-#spark-app {
+#root {
   /* Finance tracker theme colors with highest specificity */
   --background: oklch(1 0 0) !important;
   --foreground: oklch(0.2 0 0) !important;

@@ -99,7 +99,7 @@ export const BudgetProvider: React.FC<BudgetProviderProps> = ({ children }) => {
   useEffect(() => {
     const checkBudgetAlerts = async () => {
       try {
-        // For now, we'll use a mock email since spark is not available
+        // Use a placeholder email for budget alerts
         const userEmail = 'user@example.com';
         
         const budgetData = getBudgetData();
