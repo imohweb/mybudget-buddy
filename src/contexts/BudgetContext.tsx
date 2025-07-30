@@ -1,14 +1,14 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import { Expense, Budget, calculateBudgetData, getCategoryInfo, formatCurrency } from '../lib/types';
 import EmailService from '../lib/emailService';
 import { useLocalStorage } from '../hooks/useLocalStorage';
-import { useAuth } from './AuthContext';
 
 interface BudgetContextType {
   expenses: Expense[];
   budgets: Budget[];
   notifiedBudgets: string[];
+  isInitialized: boolean;
   addExpense: (expense: Omit<Expense, 'id' | 'createdAt'>) => void;
   deleteExpense: (id: string) => void;
   addBudget: (budget: Omit<Budget, 'id' | 'createdAt'>) => void;
@@ -29,85 +29,134 @@ export const useBudget = () => {
 
 interface BudgetProviderProps {
   children: React.ReactNode;
+  userId?: string;
 }
 
-export const BudgetProvider: React.FC<BudgetProviderProps> = ({ children }) => {
-  const { user, isAuthenticated } = useAuth();
-  
+export const BudgetProvider: React.FC<BudgetProviderProps> = ({ children, userId }) => {
   // Use user-specific keys for data storage
-  const userKey = user ? user.id : 'guest';
+  const userKey = userId || 'guest';
   const [expenses, setExpenses] = useLocalStorage<Expense[]>(`expenses-${userKey}`, []);
   const [budgets, setBudgets] = useLocalStorage<Budget[]>(`budgets-${userKey}`, []);
   const [notifiedBudgets, setNotifiedBudgets] = useLocalStorage<string[]>(`notified-budgets-${userKey}`, []);
   const [emailService] = useState(() => EmailService.getInstance());
+  const [isInitialized, setIsInitialized] = useState(false);
+
+  // Initialize the context
+  useEffect(() => {
+    setIsInitialized(true);
+  }, []);
 
   const addExpense = (expenseData: Omit<Expense, 'id' | 'createdAt'>) => {
-    const newExpense: Expense = {
-      ...expenseData,
-      id: Date.now().toString(),
-      createdAt: new Date().toISOString()
-    };
-
-    setExpenses(currentExpenses => [newExpense, ...currentExpenses]);
-    toast.success('Expense added successfully');
-  };
-
-  const deleteExpense = (id: string) => {
-    setExpenses(currentExpenses => currentExpenses.filter(exp => exp.id !== id));
-    toast.success('Expense deleted');
-  };
-
-  const addBudget = (budgetData: Omit<Budget, 'id' | 'createdAt'>) => {
-    // Check if budget already exists for this category
-    const existingBudget = budgets.find(b => b.categoryId === budgetData.categoryId);
+    if (!isInitialized) return;
     
-    if (existingBudget) {
-      // Update existing budget
-      setBudgets(currentBudgets => 
-        currentBudgets.map(b => 
-          b.categoryId === budgetData.categoryId 
-            ? { ...b, amount: budgetData.amount, period: budgetData.period }
-            : b
-        )
-      );
-      toast.success('Budget updated successfully');
-    } else {
-      // Create new budget
-      const newBudget: Budget = {
-        ...budgetData,
+    try {
+      const newExpense: Expense = {
+        ...expenseData,
         id: Date.now().toString(),
         createdAt: new Date().toISOString()
       };
 
-      setBudgets(currentBudgets => [...currentBudgets, newBudget]);
-      toast.success('Budget created successfully');
+      setExpenses(currentExpenses => [newExpense, ...currentExpenses]);
+      toast.success('Expense added successfully');
+    } catch (error) {
+      console.error('Error adding expense:', error);
+      toast.error('Failed to add expense');
+    }
+  };
+
+  const deleteExpense = (id: string) => {
+    if (!isInitialized) return;
+    
+    try {
+      setExpenses(currentExpenses => currentExpenses.filter(exp => exp.id !== id));
+      toast.success('Expense deleted');
+    } catch (error) {
+      console.error('Error deleting expense:', error);
+      toast.error('Failed to delete expense');
+    }
+  };
+
+  const addBudget = (budgetData: Omit<Budget, 'id' | 'createdAt'>) => {
+    if (!isInitialized) return;
+    
+    try {
+      // Check if budget already exists for this category
+      const existingBudget = budgets.find(b => b.categoryId === budgetData.categoryId);
+      
+      if (existingBudget) {
+        // Update existing budget
+        setBudgets(currentBudgets => 
+          currentBudgets.map(b => 
+            b.categoryId === budgetData.categoryId 
+              ? { ...b, amount: budgetData.amount, period: budgetData.period }
+              : b
+          )
+        );
+        toast.success('Budget updated successfully');
+      } else {
+        // Create new budget
+        const newBudget: Budget = {
+          ...budgetData,
+          id: Date.now().toString(),
+          createdAt: new Date().toISOString()
+        };
+
+        setBudgets(currentBudgets => [...currentBudgets, newBudget]);
+        toast.success('Budget created successfully');
+      }
+    } catch (error) {
+      console.error('Error adding/updating budget:', error);
+      toast.error('Failed to save budget');
     }
   };
 
   const updateBudget = (updatedBudget: Budget) => {
-    setBudgets(currentBudgets => 
-      currentBudgets.map(b => b.id === updatedBudget.id ? updatedBudget : b)
-    );
-    toast.success('Budget updated successfully');
+    if (!isInitialized) return;
+    
+    try {
+      setBudgets(currentBudgets => 
+        currentBudgets.map(b => b.id === updatedBudget.id ? updatedBudget : b)
+      );
+      toast.success('Budget updated successfully');
+    } catch (error) {
+      console.error('Error updating budget:', error);
+      toast.error('Failed to update budget');
+    }
   };
 
   const deleteBudget = (id: string) => {
-    setBudgets(currentBudgets => currentBudgets.filter(b => b.id !== id));
-    toast.success('Budget deleted');
+    if (!isInitialized) return;
+    
+    try {
+      setBudgets(currentBudgets => currentBudgets.filter(b => b.id !== id));
+      toast.success('Budget deleted');
+    } catch (error) {
+      console.error('Error deleting budget:', error);
+      toast.error('Failed to delete budget');
+    }
   };
 
-  const getBudgetData = () => {
-    return calculateBudgetData(budgets, expenses);
-  };
+  const getBudgetData = useCallback(() => {
+    if (!isInitialized) return [];
+    try {
+      return calculateBudgetData(budgets, expenses);
+    } catch (error) {
+      console.error('Error calculating budget data:', error);
+      return [];
+    }
+  }, [budgets, expenses, isInitialized]);
 
   // Budget alert system
   useEffect(() => {
+    if (!userId || !isInitialized) return; // Don't run alerts for guest users or before initialization
+    
     const checkBudgetAlerts = async () => {
       try {
         // Use a placeholder email for budget alerts
         const userEmail = 'user@example.com';
         
         const budgetData = getBudgetData();
+        if (!budgetData || budgetData.length === 0) return;
         
         for (const budget of budgetData) {
           const alertKey = `${budget.id}-${Math.floor(budget.percentage / 5) * 5}`; // Group by 5% increments
@@ -181,12 +230,13 @@ export const BudgetProvider: React.FC<BudgetProviderProps> = ({ children }) => {
     };
 
     checkBudgetAlerts();
-  }, [budgets, expenses, notifiedBudgets, setNotifiedBudgets, emailService, getBudgetData]);
+  }, [budgets, expenses, notifiedBudgets, setNotifiedBudgets, emailService, getBudgetData, userId, isInitialized]);
 
   const value: BudgetContextType = {
     expenses,
     budgets,
     notifiedBudgets,
+    isInitialized,
     addExpense,
     deleteExpense,
     addBudget,

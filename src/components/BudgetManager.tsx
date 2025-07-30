@@ -12,7 +12,7 @@ import { DEFAULT_CATEGORIES, formatCurrency, getCategoryInfo } from '@/lib/types
 import { useBudget } from '@/contexts/BudgetContext';
 
 export function BudgetManager() {
-  const { addBudget, getBudgetData } = useBudget();
+  const { addBudget, getBudgetData, isInitialized } = useBudget();
   
   const [open, setOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('');
@@ -23,6 +23,11 @@ export function BudgetManager() {
 
   const handleAddBudget = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!isInitialized) {
+      console.warn('Budget context not initialized yet');
+      return;
+    }
     
     if (!selectedCategory || !amount) {
       return;

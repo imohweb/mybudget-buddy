@@ -15,7 +15,7 @@ interface AddExpenseProps {
 }
 
 export function AddExpense({ onExpenseAdded }: AddExpenseProps) {
-  const { addExpense } = useBudget();
+  const { addExpense, isInitialized } = useBudget();
   
   const [open, setOpen] = useState(false);
   const [amount, setAmount] = useState('');
@@ -25,6 +25,11 @@ export function AddExpense({ onExpenseAdded }: AddExpenseProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!isInitialized) {
+      toast.error('System not ready, please try again');
+      return;
+    }
     
     if (!amount || !category) {
       toast.error('Please fill in all required fields');

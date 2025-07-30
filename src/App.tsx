@@ -35,7 +35,7 @@ function AppContent() {
   }
 
   return (
-    <BudgetProvider>
+    <BudgetProvider userId={user?.id}>
       <div className="min-h-screen bg-gray-50">
         <div className="container mx-auto p-4 max-w-7xl">
           <div className="flex flex-col lg:flex-row gap-6">
