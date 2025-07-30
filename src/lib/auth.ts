@@ -8,6 +8,7 @@ export interface User {
   createdAt: string;
   lastLogin: string;
   isActive: boolean;
+  passwordHash?: string; // Store hashed password
 }
 
 export interface AuthState {
@@ -48,10 +49,45 @@ export class AuthService {
     return AuthService.instance;
   }
 
+  // Simple password hashing for demo (in production, use bcrypt or similar)
+  private hashPassword(password: string): string {
+    // Simple hash for demo - in production use proper hashing like bcrypt
+    let hash = 0;
+    for (let i = 0; i < password.length; i++) {
+      const char = password.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32-bit integer
+    }
+    return Math.abs(hash).toString(36);
+  }
+
+  private verifyPassword(password: string, hash: string): boolean {
+    return this.hashPassword(password) === hash;
+  }
+
   private loadUsers(): void {
     const savedUsers = localStorage.getItem('budget-buddy-users');
     if (savedUsers) {
       this.users = JSON.parse(savedUsers);
+      // Migrate existing users without password hashes
+      this.migrateExistingUsers();
+    }
+  }
+
+  private migrateExistingUsers(): void {
+    let needsUpdate = false;
+    this.users.forEach(user => {
+      if (!user.passwordHash) {
+        // For existing users without password, set a default based on role
+        user.passwordHash = user.role === 'admin' 
+          ? this.hashPassword('admin123')
+          : this.hashPassword('password123');
+        needsUpdate = true;
+      }
+    });
+    
+    if (needsUpdate) {
+      this.saveUsers();
     }
   }
 
@@ -70,7 +106,8 @@ export class AuthService {
         role: 'admin',
         createdAt: new Date().toISOString(),
         lastLogin: new Date().toISOString(),
-        isActive: true
+        isActive: true,
+        passwordHash: this.hashPassword('admin123') // Default admin password
       };
       this.users.push(adminUser);
       this.saveUsers();
@@ -87,13 +124,13 @@ export class AuthService {
           return;
         }
 
-        // In a real app, you'd verify the password hash
-        // For demo purposes, we'll accept any password for existing users
-        // Admin password: "admin123", regular users: "password123"
-        const isValidPassword = (user.role === 'admin' && credentials.password === 'admin123') ||
-                               (user.role === 'user' && credentials.password === 'password123');
+        // Verify password against stored hash
+        if (!user.passwordHash) {
+          resolve({ success: false, error: 'Account setup incomplete. Please contact support.' });
+          return;
+        }
 
-        if (isValidPassword) {
+        if (this.verifyPassword(credentials.password, user.passwordHash)) {
           user.lastLogin = new Date().toISOString();
           this.currentUser = user;
           this.saveUsers();
@@ -136,7 +173,8 @@ export class AuthService {
           role: 'user',
           createdAt: new Date().toISOString(),
           lastLogin: new Date().toISOString(),
-          isActive: true
+          isActive: true,
+          passwordHash: this.hashPassword(data.password) // Store the actual password hash
         };
 
         this.users.push(newUser);
@@ -220,5 +258,60 @@ export class AuthService {
   isAdmin(): boolean {
     const user = this.getCurrentUser();
     return user?.role === 'admin';
+  }
+
+  // Admin method to clean up duplicate users
+  async cleanupDuplicateUsers(): Promise<{ success: boolean; removed: number; error?: string }> {
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        const seen = new Set<string>();
+        const duplicates: number[] = [];
+        
+        this.users.forEach((user, index) => {
+          if (seen.has(user.email)) {
+            duplicates.push(index);
+          } else {
+            seen.add(user.email);
+          }
+        });
+
+        // Remove duplicates (keeping the first occurrence)
+        duplicates.reverse().forEach(index => {
+          this.users.splice(index, 1);
+        });
+
+        if (duplicates.length > 0) {
+          this.saveUsers();
+        }
+
+        resolve({ success: true, removed: duplicates.length });
+      }, 500);
+    });
+  }
+
+  // Get user statistics including duplicates
+  getUserStatistics(): { total: number; duplicateEmails: string[]; usersWithoutPasswords: string[] } {
+    const emailCounts = new Map<string, number>();
+    const usersWithoutPasswords: string[] = [];
+
+    this.users.forEach(user => {
+      // Count email occurrences
+      emailCounts.set(user.email, (emailCounts.get(user.email) || 0) + 1);
+      
+      // Check for users without passwords
+      if (!user.passwordHash) {
+        usersWithoutPasswords.push(user.email);
+      }
+    });
+
+    const duplicateEmails = Array.from(emailCounts.entries())
+      .filter(([email, count]) => count > 1)
+      .map(([email]) => email);
+
+    return {
+      total: this.users.length,
+      duplicateEmails,
+      usersWithoutPasswords
+    };
   }
 }
